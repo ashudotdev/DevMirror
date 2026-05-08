@@ -52,6 +52,8 @@ type TabKey =
   | "tasks"
   | "knowledgeMap";
 
+type MobileView = "input" | "output";
+
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: "weaknesses", label: "Gaps", icon: "🔍" },
   { key: "realityCheck", label: "Reality Check", icon: "💡" },
@@ -169,7 +171,7 @@ function KnowledgeMapVisual({ km }: { km: KnowledgeMap }) {
             <span className="text-sm text-foreground-strong font-bold">
               How topics connect
             </span>
-            <span className="text-[10px] text-foreground/30 ml-1">
+            <span className="text-[10px] text-foreground/30 ml-1 hidden sm:inline">
               (learn the left side before the right)
             </span>
           </div>
@@ -202,6 +204,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [rawStream, setRawStream] = useState("");
   const [provider, setProvider] = useState<string | null>(null);
+  const [mobileView, setMobileView] = useState<MobileView>("input");
   const abortRef = useRef<AbortController | null>(null);
 
   const analyze = async () => {
@@ -213,6 +216,8 @@ export default function Home() {
     setRawStream("");
     setProvider(null);
     setActiveTab("weaknesses");
+    // Auto-switch to output view on mobile when analyzing
+    setMobileView("output");
 
     abortRef.current = new AbortController();
 
@@ -286,69 +291,91 @@ export default function Home() {
     }
   };
 
+  const hasOutput = loading || error || result;
+
   return (
-    <div className="h-screen flex flex-col">
+    <div className="h-dvh flex flex-col">
       {/* Header */}
-      <header className="flex-shrink-0 border-b border-border px-6 py-3.5 flex items-center justify-between bg-surface/50">
-        <div className="flex items-center gap-3">
+      <header className="flex-shrink-0 border-b border-border px-4 sm:px-6 py-3 sm:py-3.5 flex items-center justify-between bg-surface/50">
+        <div className="flex items-center gap-2 sm:gap-3">
           <span className="text-accent font-bold text-sm tracking-wider">
             DEVMIRROR
           </span>
-          <span className="text-foreground/40 text-xs">
+          <span className="text-foreground/40 text-xs hidden sm:inline">
             your ai coding mentor
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           {provider && (
             <span className="text-accent/50 text-[10px] uppercase tracking-wider px-2 py-0.5 bg-accent-soft rounded">
               via {provider}
             </span>
           )}
-          <span className="text-foreground/25 text-xs">gemini-2.0-flash</span>
+          <span className="text-foreground/25 text-xs hidden sm:inline">gemini-2.0-flash</span>
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="flex-1 flex min-h-0">
+      {/* Main Content — stacks vertically below lg, side-by-side at lg+ */}
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* Left Panel — Input */}
-        <div className="w-[420px] flex-shrink-0 border-r border-border flex flex-col">
-          <div className="px-4 py-3 border-b border-border bg-surface/30">
+        <div
+          className={`
+            w-full lg:w-[420px] flex-shrink-0
+            lg:border-r border-border flex flex-col
+            ${mobileView !== "input" ? "hidden lg:flex" : "flex"}
+          `}
+        >
+          <div className="px-4 py-3 border-b border-border bg-surface/30 flex items-center justify-between">
             <span className="text-xs text-foreground/50 uppercase tracking-wider">
               Your Input
             </span>
+            {/* Mobile: quick link to results when available */}
+            {hasOutput && (
+              <button
+                onClick={() => setMobileView("output")}
+                className="lg:hidden text-[10px] text-accent uppercase tracking-wider px-2.5 py-1 bg-accent-soft rounded-full border border-accent/20 cursor-pointer"
+              >
+                View Results →
+              </button>
+            )}
           </div>
-          <div className="flex-1 p-4 flex flex-col min-h-0">
+          <div className="flex-1 p-3 sm:p-4 flex flex-col min-h-0">
             <textarea
               id="main-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Paste your code, notes, tutorial transcripts, learning goals, errors, or roadmap. Dump everything."
-              className="flex-1 w-full bg-surface border border-border rounded-lg p-4 text-sm text-foreground-strong placeholder:text-foreground/30 font-mono focus:border-accent/40"
+              className="flex-1 w-full min-h-[200px] lg:min-h-0 bg-surface border border-border rounded-lg p-3 sm:p-4 text-sm text-foreground-strong placeholder:text-foreground/30 font-mono focus:border-accent/40"
               spellCheck={false}
             />
             <button
               id="analyze-btn"
               onClick={analyze}
               disabled={loading || !input.trim()}
-              className="mt-3 w-full py-3 bg-accent/15 border border-accent/30 text-accent text-sm font-bold tracking-wider rounded-lg hover:bg-accent/25 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+              className="mt-3 w-full py-3 bg-accent/15 border border-accent/30 text-accent text-sm font-bold tracking-wider rounded-lg hover:bg-accent/25 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer active:scale-[0.98] transition-transform"
             >
               {loading ? "⏳ DIAGNOSING..." : "🔬 ANALYZE"}
             </button>
-            <span className="mt-2 text-[10px] text-foreground/25 text-center">
+            <span className="mt-2 text-[10px] text-foreground/25 text-center hidden sm:block">
               Ctrl+Enter to submit
             </span>
           </div>
         </div>
 
         {/* Right Panel — Output */}
-        <div className="flex-1 flex flex-col min-h-0">
+        <div
+          className={`
+            flex-1 flex flex-col min-h-0
+            ${mobileView !== "output" ? "hidden lg:flex" : "flex"}
+          `}
+        >
           {/* Archetype Banner */}
           {result && !loading && result.developerArchetype && (
-            <div className="flex-shrink-0 border-b border-border px-6 py-3 bg-warning-soft flex items-center gap-3">
+            <div className="flex-shrink-0 border-b border-border px-4 sm:px-6 py-3 bg-warning-soft flex items-center gap-3">
               <span className="text-base">🏷️</span>
-              <div>
-                <span className="text-[10px] text-foreground/40 uppercase tracking-wider mr-2">
+              <div className="min-w-0">
+                <span className="text-[10px] text-foreground/40 uppercase tracking-wider mr-2 hidden sm:inline">
                   Your developer profile:
                 </span>
                 <span className="text-sm text-warning font-bold">
@@ -358,17 +385,18 @@ export default function Home() {
             </div>
           )}
 
-          {/* Tabs */}
-          <div className="flex-shrink-0 border-b border-border flex bg-surface/30">
+          {/* Tabs — scrollable on small screens */}
+          <div className="flex-shrink-0 border-b border-border flex overflow-x-auto bg-surface/30 scrollbar-none">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 id={`tab-${tab.key}`}
                 onClick={() => setActiveTab(tab.key)}
-                className={`px-4 py-3 text-xs tracking-wider cursor-pointer border-b-2 flex items-center gap-1.5 ${activeTab === tab.key
+                className={`px-3 sm:px-4 py-3 text-[11px] sm:text-xs tracking-wider cursor-pointer border-b-2 flex items-center gap-1 sm:gap-1.5 whitespace-nowrap flex-shrink-0 ${
+                  activeTab === tab.key
                     ? "text-accent border-accent bg-accent-soft"
                     : "text-foreground/40 border-transparent hover:text-foreground/60 hover:bg-surface/50"
-                  }`}
+                }`}
               >
                 <span className="text-sm">{tab.icon}</span>
                 {tab.label.toUpperCase()}
@@ -376,8 +404,8 @@ export default function Home() {
             ))}
           </div>
 
-          {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto p-6">
+          {/* Tab Content — extra bottom padding on mobile for the nav bar */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-20 lg:pb-6">
             {/* Loading */}
             {loading && (
               <div className="space-y-4">
@@ -402,7 +430,7 @@ export default function Home() {
 
             {/* Error */}
             {error && !loading && (
-              <div className="border border-danger/30 rounded-lg p-5 bg-danger-soft">
+              <div className="border border-danger/30 rounded-lg p-4 sm:p-5 bg-danger-soft">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-base">⚠️</span>
                   <span className="text-sm text-danger font-bold">
@@ -422,11 +450,17 @@ export default function Home() {
             {/* Empty State */}
             {!loading && !error && !result && (
               <div className="h-full flex items-center justify-center">
-                <div className="text-center max-w-md">
+                <div className="text-center max-w-md px-4">
                   <span className="text-4xl mb-4 block">🪞</span>
                   <p className="text-foreground/40 text-sm leading-relaxed mb-2">
-                    Paste your code, notes, or learning roadmap on the left and
-                    hit <span className="text-accent">Analyze</span>.
+                    <span className="hidden lg:inline">
+                      Paste your code, notes, or learning roadmap on the left and
+                      hit{" "}
+                    </span>
+                    <span className="lg:hidden">
+                      Switch to Input, paste your code or notes, and hit{" "}
+                    </span>
+                    <span className="text-accent">Analyze</span>.
                   </p>
                   <p className="text-foreground/25 text-xs leading-relaxed">
                     DevMirror will analyze how you learn and think — not just
@@ -440,7 +474,7 @@ export default function Home() {
             {result && !loading && (
               <>
                 {/* Section description */}
-                <div className="mb-5 p-3 bg-surface/50 rounded-lg border border-border/50">
+                <div className="mb-4 sm:mb-5 p-3 bg-surface/50 rounded-lg border border-border/50">
                   <p className="text-xs text-foreground/50 leading-relaxed">
                     {TAB_DESCRIPTIONS[activeTab]}
                   </p>
@@ -448,17 +482,17 @@ export default function Home() {
 
                 {/* Weaknesses */}
                 {activeTab === "weaknesses" && (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {result.weaknesses.map((w, i) => (
                       <div
                         key={i}
-                        className="border border-border rounded-lg p-4 bg-danger-soft/50"
+                        className="border border-border rounded-lg p-3 sm:p-4 bg-danger-soft/50"
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-2 sm:gap-3">
                           <span className="text-danger/60 text-sm mt-0.5">
                             {String(i + 1).padStart(2, "0")}
                           </span>
-                          <div className="flex-1">
+                          <div className="flex-1 min-w-0">
                             <p className="text-sm text-foreground-strong leading-relaxed font-bold">
                               {w.observation}
                             </p>
@@ -480,11 +514,11 @@ export default function Home() {
 
                 {/* Reality Check */}
                 {activeTab === "realityCheck" && (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {result.realityCheck.map((r, i) => (
                       <div
                         key={i}
-                        className="border border-border rounded-lg p-4 bg-warning-soft/50"
+                        className="border border-border rounded-lg p-3 sm:p-4 bg-warning-soft/50"
                       >
                         <div className="flex items-center gap-2 mb-3">
                           <span className="text-warning text-sm">💡</span>
@@ -493,7 +527,7 @@ export default function Home() {
                           </p>
                         </div>
 
-                        <div className="space-y-2.5 pl-7">
+                        <div className="space-y-2.5 pl-4 sm:pl-7">
                           <div>
                             <span className="text-[10px] text-foreground/30 uppercase tracking-wider">
                               What we noticed
@@ -530,16 +564,20 @@ export default function Home() {
                     {result.roadmap.map((item, i) => (
                       <div
                         key={i}
-                        className="border border-border rounded-lg p-4 bg-surface/50"
+                        className="border border-border rounded-lg p-3 sm:p-4 bg-surface/50"
                       >
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+                          <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2.5">
                               <span className="text-accent bg-accent-soft w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
                                 {i + 1}
                               </span>
                               <span className="text-sm text-foreground-strong font-bold">
                                 {item.topic}
+                              </span>
+                              {/* Time estimate inline on small screens */}
+                              <span className="sm:hidden text-[10px] text-foreground/35 bg-surface border border-border px-2 py-0.5 rounded-full whitespace-nowrap ml-auto">
+                                ⏱️ {item.timeEstimate}
                               </span>
                             </div>
                             <p className="mt-2 text-xs text-foreground/50 leading-relaxed pl-10">
@@ -564,7 +602,8 @@ export default function Home() {
                               </div>
                             )}
                           </div>
-                          <span className="text-[10px] text-foreground/35 bg-surface border border-border px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                          {/* Time estimate badge on the right for larger screens */}
+                          <span className="hidden sm:inline text-[10px] text-foreground/35 bg-surface border border-border px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
                             ⏱️ {item.timeEstimate}
                           </span>
                         </div>
@@ -582,13 +621,13 @@ export default function Home() {
                           ? task
                           : typeof task === "object" && task !== null
                             ? (task as Record<string, unknown>).task as string ||
-                            (task as Record<string, unknown>).description as string ||
-                            JSON.stringify(task)
+                              (task as Record<string, unknown>).description as string ||
+                              JSON.stringify(task)
                             : String(task);
                       return (
                         <div
                           key={i}
-                          className="flex items-start gap-3 p-4 border border-border rounded-lg bg-surface/50"
+                          className="flex items-start gap-3 p-3 sm:p-4 border border-border rounded-lg bg-surface/50"
                         >
                           <span className="text-accent bg-accent-soft w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
                             {i + 1}
@@ -609,6 +648,39 @@ export default function Home() {
               </>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* ─── Mobile View Toggle (fixed bottom bar) ─── */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-surface/95 backdrop-blur-xl safe-area-pb">
+        <div className="flex">
+          <button
+            onClick={() => setMobileView("input")}
+            className={`flex-1 py-3.5 text-xs font-bold tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+              mobileView === "input"
+                ? "text-accent bg-accent-soft"
+                : "text-foreground/40"
+            }`}
+          >
+            <span>✏️</span>
+            INPUT
+          </button>
+          <div className="w-px bg-border" />
+          <button
+            onClick={() => setMobileView("output")}
+            className={`flex-1 py-3.5 text-xs font-bold tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors relative ${
+              mobileView === "output"
+                ? "text-accent bg-accent-soft"
+                : "text-foreground/40"
+            }`}
+          >
+            <span>📊</span>
+            RESULTS
+            {/* Notification dot when results ready and user is on input view */}
+            {result && mobileView === "input" && (
+              <span className="absolute top-2.5 right-[calc(50%-30px)] w-2 h-2 bg-accent rounded-full animate-pulse" />
+            )}
+          </button>
         </div>
       </div>
     </div>

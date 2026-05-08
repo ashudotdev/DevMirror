@@ -25,12 +25,22 @@
   scrollbar-color: #334155 transparent;
 }
 
+/* Hide scrollbar for horizontal tab strip */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
 body {
   background: var(--color-background);
   color: var(--color-foreground);
   font-family: var(--font-mono), ui-monospace, SFMono-Regular, "SF Mono",
     Menlo, Consolas, "Liberation Mono", monospace;
   overflow: hidden;
+  overscroll-behavior: none;
 }
 
 ::selection {
@@ -44,4 +54,16 @@ textarea {
 
 textarea:focus {
   outline: none;
+}
+
+/* Safe area padding for notched devices (iPhone home indicator) */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Touch feedback for mobile */
+@media (hover: none) {
+  button:active {
+    opacity: 0.8;
+  }
 }
