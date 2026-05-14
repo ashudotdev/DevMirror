@@ -10,6 +10,9 @@ const nextConfig: NextConfig = {
   // Only allow known image domains if you ever use next/image
   images: {
     formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      { protocol: "https", hostname: "avatars.githubusercontent.com" },
+    ],
   },
 
   // Security headers for production
