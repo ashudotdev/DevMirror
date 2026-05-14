@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Vercel handles compression at the edge — skip it in Next.js to avoid double-compressing
-  compress: true,
+  compress: false,
 
   // Strict React mode catches bugs early
   reactStrictMode: true,
