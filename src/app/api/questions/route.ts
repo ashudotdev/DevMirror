@@ -145,7 +145,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: "Input is required" }, { status: 400 });
     }
 
-    let text: string;
+    let text: string = "";
     let provider = "unknown";
 
     // Provider chain: Groq → Gemini → OpenRouter
