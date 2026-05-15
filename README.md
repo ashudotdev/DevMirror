@@ -1,4 +1,5 @@
 <div align="center">
+  <img src="public/launchdevmirror.png" alt="DevMirror Launch Banner" width="600"/>
   <h1>🪞 DevMirror AI Mentor</h1>
   <p><strong>A brutally honest, highly-structured AI mentor that diagnoses how you learn and think as a developer.</strong></p>
   
@@ -11,6 +12,10 @@
 <br />
 
 ## 🌟 Overview
+
+<div align="center">
+  <img src="public/dm.png" alt="DevMirror Interface" width="800"/>
+</div>
 
 **DevMirror** is an interactive, dark-themed AI mentor application built with Next.js and powered by the Gemini API. Instead of just giving answers, DevMirror analyzes your coding habits, notes, or learning roadmaps and provides a structured diagnosis of your developer persona. 
 

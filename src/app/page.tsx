@@ -496,8 +496,9 @@ export default function Home() {
       
       // DeepSeek models output <think>...</think> before JSON.
       // We extract only the actual JSON object to avoid parse errors.
-      const jsonMatch = trimmed.match(/\{[\s\S]*\}/);
-      let jsonStr = jsonMatch ? jsonMatch[0] : trimmed;
+      const withoutThink = trimmed.replace(/<think>[\s\S]*?<\/think>/gi, "");
+      const jsonMatch = withoutThink.match(/\{[\s\S]*\}/);
+      let jsonStr = jsonMatch ? jsonMatch[0] : withoutThink;
       
       jsonStr = jsonStr
         .replace(/^```json?\s*/, "")
@@ -856,176 +857,224 @@ export default function Home() {
                   {/* Weaknesses */}
                   {activeTab === "weaknesses" && (
                     <div className="space-y-3 sm:space-y-4">
-                      {result.weaknesses.map((w, i) => (
-                        <div
-                          key={i}
-                          className="border border-border rounded-lg p-3 sm:p-4 bg-danger-soft/50"
-                        >
-                          <div className="flex items-start gap-2 sm:gap-3">
-                            <span className="text-danger/60 text-sm mt-0.5">
-                              {String(i + 1).padStart(2, "0")}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm text-foreground-strong leading-relaxed font-bold">
-                                {w.observation}
-                              </p>
-                              <div className="mt-2 pl-3 border-l-2 border-border">
-                                <p className="text-xs text-foreground/50 leading-relaxed">
-                                  <span className="text-foreground/30 font-bold">
-                                    How we spotted this:
-                                  </span>{" "}
-                                  {w.evidence}
+                      {result.weaknesses?.length > 0 ? (
+                        result.weaknesses.map((w, i) => (
+                          <div
+                            key={i}
+                            className="border border-border rounded-lg p-3 sm:p-4 bg-danger-soft/50"
+                          >
+                            <div className="flex items-start gap-2 sm:gap-3">
+                              <span className="text-danger/60 text-sm mt-0.5">
+                                {String(i + 1).padStart(2, "0")}
+                              </span>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm text-foreground-strong leading-relaxed font-bold">
+                                  {w.observation}
                                 </p>
+                                <div className="mt-2 pl-3 border-l-2 border-border">
+                                  <p className="text-xs text-foreground/50 leading-relaxed">
+                                    <span className="text-foreground/30 font-bold">
+                                      How we spotted this:
+                                    </span>{" "}
+                                    {w.evidence}
+                                  </p>
+                                </div>
+                                <ConfidenceBar score={w.confidenceScore} />
                               </div>
-                              <ConfidenceBar score={w.confidenceScore} />
                             </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-10 px-4 bg-surface/30 rounded-lg border border-border/50">
+                          <span className="text-3xl mb-3 block">✨</span>
+                          <p className="text-sm text-foreground-strong font-bold mb-1">
+                            No major gaps detected!
+                          </p>
+                          <p className="text-xs text-foreground/50">
+                            This code looks solid. We didn't find any glaring anti-patterns or skill gaps here.
+                          </p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
 
                   {/* Reality Check */}
                   {activeTab === "realityCheck" && (
                     <div className="space-y-3 sm:space-y-4">
-                      {result.realityCheck.map((r, i) => (
-                        <div
-                          key={i}
-                          className="border border-border rounded-lg p-3 sm:p-4 bg-warning-soft/50"
-                        >
-                          <div className="flex items-center gap-2 mb-3">
-                            <span className="text-warning text-sm">💡</span>
-                            <p className="text-sm text-warning font-bold flex-1">
-                              {r.issue}
-                            </p>
-                            {r.lineStart && (
-                              <button
-                                onClick={() => scrollToLine(r.lineStart!, r.lineEnd)}
-                                className="flex-shrink-0 flex items-center gap-1 px-2 py-1 text-[10px] font-mono font-bold bg-info-soft text-info border border-info/20 rounded-md hover:bg-info/20 hover:border-info/40 cursor-pointer transition-all active:scale-95"
-                                title={r.lineEnd && r.lineEnd !== r.lineStart ? `Go to lines ${r.lineStart}–${r.lineEnd}` : `Go to line ${r.lineStart}`}
-                              >
-                                <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                  <polyline points="16 18 22 12 16 6" />
-                                  <polyline points="8 6 2 12 8 18" />
-                                </svg>
-                                {r.lineEnd && r.lineEnd !== r.lineStart
-                                  ? `L${r.lineStart}–${r.lineEnd}`
-                                  : `L${r.lineStart}`}
-                              </button>
-                            )}
-                          </div>
+                      {result.realityCheck?.length > 0 ? (
+                        result.realityCheck.map((r, i) => (
+                          <div
+                            key={i}
+                            className="border border-border rounded-lg p-3 sm:p-4 bg-warning-soft/50"
+                          >
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className="text-warning text-sm">💡</span>
+                              <p className="text-sm text-warning font-bold flex-1">
+                                {r.issue}
+                              </p>
+                              {r.lineStart && (
+                                <button
+                                  onClick={() => scrollToLine(r.lineStart!, r.lineEnd)}
+                                  className="flex-shrink-0 flex items-center gap-1 px-2 py-1 text-[10px] font-mono font-bold bg-info-soft text-info border border-info/20 rounded-md hover:bg-info/20 hover:border-info/40 cursor-pointer transition-all active:scale-95"
+                                  title={r.lineEnd && r.lineEnd !== r.lineStart ? `Go to lines ${r.lineStart}–${r.lineEnd}` : `Go to line ${r.lineStart}`}
+                                >
+                                  <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polyline points="16 18 22 12 16 6" />
+                                    <polyline points="8 6 2 12 8 18" />
+                                  </svg>
+                                  {r.lineEnd && r.lineEnd !== r.lineStart
+                                    ? `L${r.lineStart}–${r.lineEnd}`
+                                    : `L${r.lineStart}`}
+                                </button>
+                              )}
+                            </div>
 
-                          <div className="space-y-2.5 pl-4 sm:pl-7">
-                            <div>
-                              <span className="text-[10px] text-foreground/30 uppercase tracking-wider">
-                                What we noticed
-                              </span>
-                              <p className="text-xs text-foreground/60 leading-relaxed mt-0.5">
-                                {r.evidence}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-[10px] text-danger/60 uppercase tracking-wider">
-                                Why this is a problem
-                              </span>
-                              <p className="text-xs text-foreground/60 leading-relaxed mt-0.5">
-                                {r.consequence}
-                              </p>
-                            </div>
-                            <div className="bg-accent-soft p-2.5 rounded border border-accent/15">
-                              <span className="text-[10px] text-accent/60 uppercase tracking-wider">
-                                What to do instead
-                              </span>
-                              <p className="text-xs text-accent leading-relaxed mt-0.5">
-                                {r.correction}
-                              </p>
+                            <div className="space-y-2.5 pl-4 sm:pl-7">
+                              <div>
+                                <span className="text-[10px] text-foreground/30 uppercase tracking-wider">
+                                  What we noticed
+                                </span>
+                                <p className="text-xs text-foreground/60 leading-relaxed mt-0.5">
+                                  {r.evidence}
+                                </p>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-danger/60 uppercase tracking-wider">
+                                  Why this is a problem
+                                </span>
+                                <p className="text-xs text-foreground/60 leading-relaxed mt-0.5">
+                                  {r.consequence}
+                                </p>
+                              </div>
+                              <div className="bg-accent-soft p-2.5 rounded border border-accent/15">
+                                <span className="text-[10px] text-accent/60 uppercase tracking-wider">
+                                  What to do instead
+                                </span>
+                                <p className="text-xs text-accent leading-relaxed mt-0.5">
+                                  {r.correction}
+                                </p>
+                              </div>
                             </div>
                           </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-10 px-4 bg-surface/30 rounded-lg border border-border/50">
+                          <span className="text-3xl mb-3 block">🙌</span>
+                          <p className="text-sm text-foreground-strong font-bold mb-1">
+                            No bad habits detected!
+                          </p>
+                          <p className="text-xs text-foreground/50">
+                            Your coding patterns look clean. We didn't find anything needing a reality check.
+                          </p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
 
                   {/* Roadmap */}
                   {activeTab === "roadmap" && (
                     <div className="space-y-3">
-                      {result.roadmap.map((item, i) => (
-                        <div
-                          key={i}
-                          className="border border-border rounded-lg p-3 sm:p-4 bg-surface/50"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2.5">
-                                <span className="text-accent bg-accent-soft w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
-                                  {i + 1}
-                                </span>
-                                <span className="text-sm text-foreground-strong font-bold">
-                                  {item.topic}
-                                </span>
-                                {/* Time estimate inline on small screens */}
-                                <span className="sm:hidden text-[10px] text-foreground/35 bg-surface border border-border px-2 py-0.5 rounded-full whitespace-nowrap ml-auto">
-                                  ⏱️ {item.timeEstimate}
-                                </span>
-                              </div>
-                              <p className="mt-2 text-xs text-foreground/50 leading-relaxed pl-10">
-                                {item.why}
-                              </p>
-                              {item.prerequisite && (
-                                <p className="mt-1.5 text-[10px] text-foreground/35 pl-10">
-                                  <span className="text-info/60">
-                                    📋 Learn first:
-                                  </span>{" "}
-                                  {item.prerequisite}
-                                </p>
-                              )}
-                              {item.buildToProveSkill && (
-                                <div className="mt-2.5 ml-10 p-2.5 bg-accent-soft rounded border border-accent/15">
-                                  <span className="text-[10px] text-accent/60 uppercase tracking-wider">
-                                    🛠️ Build this to prove you learned it
+                      {result.roadmap?.length > 0 ? (
+                        result.roadmap.map((item, i) => (
+                          <div
+                            key={i}
+                            className="border border-border rounded-lg p-3 sm:p-4 bg-surface/50"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2 sm:gap-4">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2.5">
+                                  <span className="text-accent bg-accent-soft w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0">
+                                    {i + 1}
                                   </span>
-                                  <p className="text-xs text-accent leading-relaxed mt-0.5">
-                                    {item.buildToProveSkill}
-                                  </p>
+                                  <span className="text-sm text-foreground-strong font-bold">
+                                    {item.topic}
+                                  </span>
+                                  {/* Time estimate inline on small screens */}
+                                  <span className="sm:hidden text-[10px] text-foreground/35 bg-surface border border-border px-2 py-0.5 rounded-full whitespace-nowrap ml-auto">
+                                    ⏱️ {item.timeEstimate}
+                                  </span>
                                 </div>
-                              )}
+                                <p className="mt-2 text-xs text-foreground/50 leading-relaxed pl-10">
+                                  {item.why}
+                                </p>
+                                {item.prerequisite && (
+                                  <p className="mt-1.5 text-[10px] text-foreground/35 pl-10">
+                                    <span className="text-info/60">
+                                      📋 Learn first:
+                                    </span>{" "}
+                                    {item.prerequisite}
+                                  </p>
+                                )}
+                                {item.buildToProveSkill && (
+                                  <div className="mt-2.5 ml-10 p-2.5 bg-accent-soft rounded border border-accent/15">
+                                    <span className="text-[10px] text-accent/60 uppercase tracking-wider">
+                                      🛠️ Build this to prove you learned it
+                                    </span>
+                                    <p className="text-xs text-accent leading-relaxed mt-0.5">
+                                      {item.buildToProveSkill}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                              {/* Time estimate badge on the right for larger screens */}
+                              <span className="hidden sm:inline text-[10px] text-foreground/35 bg-surface border border-border px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
+                                ⏱️ {item.timeEstimate}
+                              </span>
                             </div>
-                            {/* Time estimate badge on the right for larger screens */}
-                            <span className="hidden sm:inline text-[10px] text-foreground/35 bg-surface border border-border px-2.5 py-1 rounded-full whitespace-nowrap flex-shrink-0">
-                              ⏱️ {item.timeEstimate}
-                            </span>
                           </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-10 px-4 bg-surface/30 rounded-lg border border-border/50">
+                          <span className="text-3xl mb-3 block">🚀</span>
+                          <p className="text-sm text-foreground-strong font-bold mb-1">
+                            You're on the right track!
+                          </p>
+                          <p className="text-xs text-foreground/50">
+                            We don't have any specific roadmap recommendations for this snippet. Keep building!
+                          </p>
                         </div>
-                      ))}
+                      )}
                     </div>
                   )}
 
                   {/* Tasks */}
                   {activeTab === "tasks" && (
                     <div className="space-y-3">
-                      {result.tasks.map((task, i) => {
-                        const taskText =
-                          typeof task === "string"
-                            ? task
-                            : typeof task === "object" && task !== null
-                              ? (task as Record<string, unknown>).task as string ||
-                              (task as Record<string, unknown>).description as string ||
-                              JSON.stringify(task)
-                              : String(task);
-                        return (
-                          <div
-                            key={i}
-                            className="flex items-start gap-3 p-3 sm:p-4 border border-border rounded-lg bg-surface/50"
-                          >
-                            <span className="text-accent bg-accent-soft w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
-                              {i + 1}
-                            </span>
-                            <p className="text-sm text-foreground-strong leading-relaxed">
-                              {taskText}
-                            </p>
-                          </div>
-                        );
-                      })}
+                      {result.tasks?.length > 0 ? (
+                        result.tasks.map((task, i) => {
+                          const taskText =
+                            typeof task === "string"
+                              ? task
+                              : typeof task === "object" && task !== null
+                                ? (task as Record<string, unknown>).task as string ||
+                                (task as Record<string, unknown>).description as string ||
+                                JSON.stringify(task)
+                                : String(task);
+                          return (
+                            <div
+                              key={i}
+                              className="flex items-start gap-3 p-3 sm:p-4 border border-border rounded-lg bg-surface/50"
+                            >
+                              <span className="text-accent bg-accent-soft w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                                {i + 1}
+                              </span>
+                              <p className="text-sm text-foreground-strong leading-relaxed">
+                                {taskText}
+                              </p>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <div className="text-center py-10 px-4 bg-surface/30 rounded-lg border border-border/50">
+                          <span className="text-3xl mb-3 block">🏖️</span>
+                          <p className="text-sm text-foreground-strong font-bold mb-1">
+                            No immediate tasks
+                          </p>
+                          <p className="text-xs text-foreground/50">
+                            Take a break or find a new feature to build. Your code is looking good!
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
